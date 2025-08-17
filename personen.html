@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Personendatenbank - Ausweis Ansicht</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
+
+    body, html {
+      margin: 0; padding: 20px;
+      font-family: 'Roboto', sans-serif;
+      background: linear-gradient(135deg, #1c2331, #283655);
+      color: #eee;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    h1 {
+      margin-bottom: 20px;
+      user-select: none;
+    }
+
+    #container {
+      display: flex;
+      gap: 30px;
+      flex: 1;
+      min-height: 400px;
+    }
+
+    #leftPanel {
+      flex: 1;
+      max-width: 350px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #searchInput {
+      padding: 10px;
+      font-size: 1rem;
+      border-radius: 8px;
+      border: none;
+      margin-bottom: 20px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    #personList {
+      background: #283655dd;
+      border-radius: 12px;
+      overflow-y: auto;
+      flex-grow: 1;
+      box-shadow: 0 0 10px #0a68ff88;
+    }
+
+    #personList button {
+      width: 100%;
+      background: none;
+      border: none;
+      color: #eee;
+      padding: 15px 20px;
+      text-align: left;
+      font-size: 1.1rem;
+      cursor: pointer;
+      border-bottom: 1px solid #0a68ff55;
+      transition: background-color 0.2s;
+      user-select: none;
+    }
+
+    #personList button:hover, #personList button.active {
+      background-color: #0a68ffaa;
+      color: #fff;
+    }
+
+    #rightPanel {
+      flex: 1.5;
+      background: #283655cc;
+      border-radius: 16px;
+      box-shadow: 0 0 20px #0a68ffbb;
+      padding: 30px 30px 40px 30px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      max-width: 500px;
+      user-select: none;
+    }
+
+    #profileContainer {
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+    }
+
+    #rightPanel img {
+      width: 140px;
+      height: 180px;
+      object-fit: cover;
+      border-radius: 12px;
+      box-shadow: 0 0 15px #0a68ffbb;
+      border: 2px solid #0a68ff;
+      background: #111;
+      flex-shrink: 0;
+    }
+
+    #detailsContainer {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #rightPanel h2 {
+      margin-top: 0;
+      margin-bottom: 15px;
+      font-size: 2rem;
+      letter-spacing: 1px;
+      font-weight: 700;
+      border-bottom: 2px solid #0a68ff;
+      padding-bottom: 5px;
+    }
+
+    #infoTable {
+      margin-top: 10px;
+      border-collapse: collapse;
+      width: 100%;
+    }
+
+    #infoTable td {
+      padding: 8px 12px;
+      border-bottom: 1px solid #0a68ff44;
+      font-size: 1.1rem;
+    }
+
+    #infoTable td.label {
+      font-weight: 700;
+      color: #0a68ff;
+      width: 130px;
+      user-select: text;
+    }
+
+    #noSelection {
+      color: #aaa;
+      font-style: italic;
+      margin-top: 60px;
+      text-align: center;
+      flex-grow: 1;
+      align-self: center;
+      font-size: 1.3rem;
+    }
+
+    /* Scrollbar styling */
+    #personList::-webkit-scrollbar {
+      width: 8px;
+    }
+    #personList::-webkit-scrollbar-thumb {
+      background: #0a68ff88;
+      border-radius: 4px;
+    }
+
+    /* Neue Buttons */
+    #actionButtons {
+      margin-top: 30px;
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+    }
+
+    #actionButtons button {
+      padding: 12px 18px;
+      font-size: 1rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 700;
+      color: #fff;
+      background-color: #0a68ff;
+      box-shadow: 0 0 10px #0a68ffbb;
+      transition: background-color 0.3s;
+      user-select: none;
+    }
+
+    #actionButtons button:hover {
+      background-color: #0056cc;
+    }
+
+    /* Neues Formular-Fenster rechts neben Details */
+    #formPanel {
+      flex: 1;
+      background: #1f2a4dcc;
+      border-radius: 16px;
+      box-shadow: 0 0 20px #0a68ffbb;
+      padding: 30px 25px;
+      max-width: 400px;
+      color: #eee;
+      font-size: 1rem;
+      user-select: text;
+      display: none;
+      flex-direction: column;
+    }
+
+    #formPanel h3 {
+      margin-top: 0;
+      margin-bottom: 15px;
+      font-weight: 700;
+      border-bottom: 2px solid #0a68ff;
+      padding-bottom: 5px;
+      font-size: 1.8rem;
+    }
+
+    #formPanel label {
+      display: block;
+      margin-top: 15px;
+      font-weight: 600;
+      color: #0a68ff;
+    }
+
+    #formPanel input, #formPanel textarea {
+      margin-top: 5px;
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 6px;
+      border: none;
+      font-size: 1rem;
+      box-sizing: border-box;
+    }
+
+    #formPanel textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    #formPanel button {
+      margin-top: 20px;
+      background-color: #0a68ff;
+      color: white;
+      font-weight: 700;
+      border: none;
+      padding: 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 0 0 10px #0a68ffbb;
+      transition: background-color 0.3s;
+    }
+
+    #formPanel button:hover {
+      background-color: #0056cc;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Personendatenbank durchsuchen</h1>
+
+  <div id="container">
+    <div id="leftPanel">
+      <input type="text" id="searchInput" placeholder="Suche nach Name, Vorname, Scheine, etc." />
+      <div id="personList">
+        <!-- Buttons mit Namen -->
+      </div>
+    </div>
+
+    <div id="rightPanel">
+      <div id="noSelection">Bitte wähle eine Person aus der Liste aus.</div>
+      <div id="personDetails" style="display:none;">
+        <div id="profileContainer">
+          <img src="BobDefaultLegacy.png" alt="Profilbild" id="profileImage" />
+          <div id="detailsContainer">
+            <h2 id="fullName"></h2>
+            <table id="infoTable">
+              <tr><td class="label">Geburtsdatum:</td><td id="detailGeburtsdatum"></td></tr>
+              <tr><td class="label">Geburtsland:</td><td id="detailGeburtsland"></td></tr>
+              <tr><td class="label">Geburtsstadt:</td><td id="detailGeburtsstadt"></td></tr>
+              <tr><td class="label">Adresse:</td><td id="detailAdresse"></td></tr>
+              <tr><td class="label">Erstellungsdatum:</td><td id="detailErstellungsdatum"></td></tr>
+              <tr><td class="label">Punkte:</td><td id="detailPunkte"></td></tr>
+              <tr><td class="label">Fahrerlaubnis:</td><td id="detailFahrerlaubnis"></td></tr>
+              <tr><td class="label">Scheine:</td><td id="detailScheine"></td></tr>
+              <tr><td class="label">Vorstrafen:</td><td id="detailVorstrafen"></td></tr>
+              <tr><td class="label">Fahndung:</td><td id="detailFahndung"></td></tr>
+              <tr><td class="label">Bußgelder:</td><td id="detailBussgelder"></td></tr>
+              <tr><td class="label">Notizen:</td><td id="detailNotizen"></td></tr>
+            </table>
+
+            <div id="actionButtons">
+              <button id="btnBussgeld">Bußgeld Dokumentieren</button>
+              <button id="btnFestnahme">Festnahme Dokumentieren</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Neues Formularfenster rechts daneben -->
+    <div id="formPanel"></div>
+
+  </div>
+
+<script type="module">
+  import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
+
+  const supabaseUrl = 'https://stnvlbjltxbuxnmpfnil.supabase.co'
+  const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN0bnZsYmpsdHhidXhubXBmbmlsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU0MjI1MzAsImV4cCI6MjA3MDk5ODUzMH0.2hHoQbWN5LfykrC377ph2NMxyD2Qkc4m6CRhzu42m6A'
+  const supabase = createClient(supabaseUrl, supabaseKey)
+
+  const searchInput = document.getElementById('searchInput')
+  const personList = document.getElementById('personList')
+  const noSelection = document.getElementById('noSelection')
+  const personDetails = document.getElementById('personDetails')
+
+  const fullNameElem = document.getElementById('fullName')
+  const geburtsdatumElem = document.getElementById('detailGeburtsdatum')
+  const geburtslandElem = document.getElementById('detailGeburtsland')
+  const geburtsstadtElem = document.getElementById('detailGeburtsstadt')
+  const adresseElem = document.getElementById('detailAdresse')
+  const erstellungsdatumElem = document.getElementById('detailErstellungsdatum')
+  const punkteElem = document.getElementById('detailPunkte')
+  const fahrerlaubnisElem = document.getElementById('detailFahrerlaubnis')
+  const scheineElem = document.getElementById('detailScheine')
+  const vorstrafenElem = document.getElementById('detailVorstrafen')
+  const fahndungElem = document.getElementById('detailFahndung')
+  const bussgelderElem = document.getElementById('detailBussgelder')
+  const notizenElem = document.getElementById('detailNotizen')
+
+  const formPanel = document.getElementById('formPanel')
+
+  let personen = []
+  let aktivePersonId = null
+
+  async function ladePersonen(filter = '') {
+    personList.innerHTML = '... lade ...'
+    noSelection.style.display = 'block'
+    personDetails.style.display = 'none'
+    formPanel.style.display = 'none'
+    formPanel.innerHTML = ''
+
+    let query = supabase.from('personen').select('*')
+
+    if (filter) {
+      query = query.or(`vorname.ilike.%${filter}%,nachname.ilike.%${filter}%,scheine.ilike.%${filter}%`)
+    }
+
+    const { data, error } = await query.order('nachname', { ascending: true })
+
+    if (error) {
+      personList.innerHTML = '<div style="color: #f55; padding: 20px;">Fehler beim Laden der Daten</div>'
+      return
+    }
+
+    personen = data || []
+
+    if (personen.length === 0) {
+      personList.innerHTML = '<div style="color: #ccc; padding: 20px;">Keine Einträge gefunden</div>'
+      return
+    }
+
+    personList.innerHTML = ''
+    personen.forEach(p => {
+      const btn = document.createElement('button')
+      btn.textContent = `${p.vorname} ${p.nachname}`
+      btn.onclick = () => selectPerson(p.id)
+      if (p.id === aktivePersonId) btn.classList.add('active')
+      personList.appendChild(btn)
+    })
+  }
+
+  async function ladeBussgelder(personId) {
+    const { data, error } = await supabase
+      .from('bussgelder')
+      .select('*')
+      .eq('person_id', personId)
+      .order('datum', { ascending: false })
+
+    if (error) {
+      console.error('Fehler beim Laden der Bußgelder:', error)
+      return []
+    }
+
+    return data || []
+  }
+
+  async function selectPerson(id) {
+    aktivePersonId = id
+    const person = personen.find(p => p.id === id)
+    if (!person) return
+
+    Array.from(personList.children).forEach(btn => {
+      btn.classList.toggle('active', btn.textContent === `${person.vorname} ${person.nachname}`)
+    })
+
+    noSelection.style.display = 'none'
+    personDetails.style.display = 'block'
+    formPanel.style.display = 'none'
+    formPanel.innerHTML = ''
+
+    fullNameElem.textContent = `${person.vorname ?? '-'} ${person.nachname ?? '-'}`
+    geburtsdatumElem.textContent = person.geburtsdatum ?? '-'
+    geburtslandElem.textContent = person.geburtsland ?? '-'
+    geburtsstadtElem.textContent = person.geburtsstadt ?? '-'
+    adresseElem.textContent = person.adresse ?? '-'
+    erstellungsdatumElem.textContent = person.erstellungsdatum ?? '-'
+    punkteElem.textContent = person.punkte ?? '-'
+    fahrerlaubnisElem.textContent = person.fahrerlaubnis ? 'Ja' : 'Nein'
+    scheineElem.textContent = person.scheine ?? '-'
+    vorstrafenElem.textContent = person.vorstrafen ?? '-'
+    fahndungElem.textContent = person.fahndung ? 'Ja' : 'Nein'
+    bussgelderElem.textContent = person.bussgelder ?? '-'
+    notizenElem.textContent = person.notizen ?? '-'
+
+    // Bußgelder laden und anzeigen
+    const bussgelder = await ladeBussgelder(id)
+
+    // Bußgelder-Anzeige hinzufügen (unterhalb der Tabelle)
+    let existingBussgelderDiv = document.getElementById('bussgelderList')
+    if (!existingBussgelderDiv) {
+      existingBussgelderDiv = document.createElement('div')
+      existingBussgelderDiv.id = 'bussgelderList'
+      existingBussgelderDiv.style.marginTop = '20px'
+      existingBussgelderDiv.style.maxHeight = '150px'
+      existingBussgelderDiv.style.overflowY = 'auto'
+      existingBussgelderDiv.style.borderTop = '2px solid #0a68ff'
+      existingBussgelderDiv.style.paddingTop = '10px'
+      existingBussgelderDiv.style.color = '#0a68ff'
+      document.getElementById('detailsContainer').appendChild(existingBussgelderDiv)
+    }
+
+    if (bussgelder.length === 0) {
+      existingBussgelderDiv.innerHTML = '<em>Keine Bußgelder vorhanden.</em>'
+    } else {
+      existingBussgelderDiv.innerHTML = '<h3>Bußgelder</h3>'
+      bussgelder.forEach(bg => {
+        const datum = new Date(bg.datum).toLocaleDateString('de-DE')
+        const betrag = bg.betrag.toFixed(2)
+        existingBussgelderDiv.innerHTML += `
+          <div style="border-bottom: 1px solid #0a68ff44; padding: 5px 0;">
+            <strong>${datum}</strong>: ${bg.grund} — <em>${betrag} €</em>
+          </div>`
+      })
+    }
+  }
+
+  searchInput.addEventListener('input', e => {
+    const val = e.target.value.trim()
+    ladePersonen(val)
+  })
+
+  // Initial laden
+  ladePersonen()
+
+  // Buttons für Formulare
+  const btnBussgeld = document.getElementById('btnBussgeld')
+  const btnFestnahme = document.getElementById('btnFestnahme')
+
+  btnBussgeld.addEventListener('click', () => {
+    if (!aktivePersonId) return alert('Bitte erst eine Person auswählen.')
+    zeigeFormular('bussgeld')
+  })
+
+  btnFestnahme.addEventListener('click', () => {
+    if (!aktivePersonId) return alert('Bitte erst eine Person auswählen.')
+    zeigeFormular('festnahme')
+  })
+
+  function zeigeFormular(art) {
+    formPanel.style.display = 'flex'
+    formPanel.innerHTML = '' // löschen
+
+    if (art === 'bussgeld') {
+      formPanel.innerHTML = `
+        <h3>Bußgeld dokumentieren</h3>
+        <label for="datum">Datum</label>
+        <input type="date" id="datum" required />
+
+        <label for="grund">Grund</label>
+        <textarea id="grund" placeholder="Grund für das Bußgeld" required></textarea>
+
+        <label for="betrag">Betrag (€)</label>
+        <input type="number" id="betrag" min="0" step="0.01" placeholder="z.B. 25.00" required />
+
+        <button id="btnSpeichernBussgeld">Speichern</button>
+        <button id="btnAbbrechen">Abbrechen</button>
+      `
+
+      formPanel.querySelector('#btnSpeichernBussgeld').addEventListener('click', async () => {
+        const datum = formPanel.querySelector('#datum').value
+        const grund = formPanel.querySelector('#grund').value.trim()
+        const betrag = parseFloat(formPanel.querySelector('#betrag').value)
+
+        if (!datum || !grund || isNaN(betrag) || betrag < 0) {
+          alert('Bitte alle Felder korrekt ausfüllen.')
+          return
+        }
+
+        // Insert in Supabase
+        const { data, error } = await supabase.from('bussgelder').insert([{
+          person_id: aktivePersonId,
+          datum,
+          grund,
+          betrag
+        }])
+
+        if (error) {
+          alert('Fehler beim Speichern: ' + error.message)
+          return
+        }
+
+        alert('Bußgeld erfolgreich gespeichert.')
+        formPanel.style.display = 'none'
+        formPanel.innerHTML = ''
+        // Optional: Daten aktualisieren, z.B. neu laden der Personen
+        ladePersonen(searchInput.value)
+        // Auch Details aktualisieren
+        selectPerson(aktivePersonId)
+      })
+
+      formPanel.querySelector('#btnAbbrechen').addEventListener('click', () => {
+        formPanel.style.display = 'none'
+        formPanel.innerHTML = ''
+      })
+    }
+
+    if (art === 'festnahme') {
+      formPanel.innerHTML = `
+        <h3>Festnahme dokumentieren</h3>
+        <label for="festnahmeDatum">Datum</label>
+        <input type="date" id="festnahmeDatum" required />
+
+        <label for="grundFestnahme">Grund</label>
+        <textarea id="grundFestnahme" placeholder="Grund für die Festnahme" required></textarea>
+
+        <label for="dauer">Dauer (in Stunden)</label>
+        <input type="number" id="dauer" min="0" step="1" placeholder="z.B. 12" required />
+
+        <button id="btnSpeichernFestnahme">Speichern</button>
+        <button id="btnAbbrechenFestnahme">Abbrechen</button>
+      `
+
+      formPanel.querySelector('#btnSpeichernFestnahme').addEventListener('click', async () => {
+        const datum = formPanel.querySelector('#festnahmeDatum').value
+        const grund = formPanel.querySelector('#grundFestnahme').value.trim()
+        const dauer = parseInt(formPanel.querySelector('#dauer').value)
+
+        if (!datum || !grund || isNaN(dauer) || dauer < 0) {
+          alert('Bitte alle Felder korrekt ausfüllen.')
+          return
+        }
+
+        // Insert in Supabase
+        const { data, error } = await supabase.from('festnahmen').insert([{
+          person_id: aktivePersonId,
+          datum,
+          grund,
+          dauer
+        }])
+
+        if (error) {
+          alert('Fehler beim Speichern: ' + error.message)
+          return
+        }
+
+        alert('Festnahme erfolgreich gespeichert.')
+        formPanel.style.display = 'none'
+        formPanel.innerHTML = ''
+        ladePersonen(searchInput.value)
+        selectPerson(aktivePersonId)
+      })
+
+      formPanel.querySelector('#btnAbbrechenFestnahme').addEventListener('click', () => {
+        formPanel.style.display = 'none'
+        formPanel.innerHTML = ''
+      })
+    }
+  }
+</script>
+
+</body>
+</html>
