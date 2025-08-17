@@ -378,6 +378,20 @@
     return data || []
   }
 
+  async function ladeVorstrafen(personId) {
+    const { data, error } = await supabase
+      .from('vorstrafen')
+      .select('*')
+      .eq('person_id', personId)
+
+    if (error) {
+      console.error('Fehler beim Laden der Vorstrafen:', error)
+      return []
+    }
+
+    return data || []
+  }
+
   async function selectPerson(id) {
     aktivePersonId = id
     const person = personen.find(p => p.id === id)
@@ -406,10 +420,11 @@
     bussgelderElem.textContent = person.bussgelder ?? '-'
     notizenElem.textContent = person.notizen ?? '-'
 
-    // Bußgelder laden und anzeigen
+    // Lade und zeige Bußgelder
     const bussgelder = await ladeBussgelder(id)
+    const bussgelderCount = bussgelder.length
+    bussgelderElem.textContent = `${bussgelderCount}`
 
-    // Bußgelder-Anzeige hinzufügen (unterhalb der Tabelle)
     let existingBussgelderDiv = document.getElementById('bussgelderList')
     if (!existingBussgelderDiv) {
       existingBussgelderDiv = document.createElement('div')
@@ -429,13 +444,17 @@
       existingBussgelderDiv.innerHTML = '<h3>Bußgelder</h3>'
       bussgelder.forEach(bg => {
         const datum = new Date(bg.datum).toLocaleDateString('de-DE')
-        const betrag = bg.betrag.toFixed(2)
         existingBussgelderDiv.innerHTML += `
           <div style="border-bottom: 1px solid #0a68ff44; padding: 5px 0;">
-            <strong>${datum}</strong>: ${bg.grund} — <em>${betrag} €</em>
+            <strong>${datum}</strong>: ${bg.grund}
           </div>`
       })
     }
+
+    // Lade und zeige Vorstrafen
+    const vorstrafen = await ladeVorstrafen(id)
+    const vorstrafenCount = vorstrafen.length
+    vorstrafenElem.textContent = `${vorstrafenCount}`
   }
 
   searchInput.addEventListener('input', e => {
@@ -443,10 +462,8 @@
     ladePersonen(val)
   })
 
-  // Initial laden
   ladePersonen()
 
-  // Buttons für Formulare
   const btnBussgeld = document.getElementById('btnBussgeld')
   const btnFestnahme = document.getElementById('btnFestnahme')
 
